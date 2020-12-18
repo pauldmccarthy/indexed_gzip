@@ -734,7 +734,7 @@ cdef class _IndexedGzipFile:
 
         else:
             close_file = False
-            if fileobj.mode != 'wb':
+            if getattr(fileobj, 'mode', 'wb') != 'wb':
                 raise ValueError(
                     'File should be opened write-only binary mode.')
 
