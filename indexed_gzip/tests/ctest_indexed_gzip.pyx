@@ -371,6 +371,34 @@ def test_read_all(testfile, nelems, use_mmap, drop):
     assert check_data_valid(data, 0)
 
 
+def test_simple_read_with_null_padding():
+
+    fileobj = BytesIO(gzip.compress(b"hello world") + b"\0" * 100)
+    
+    with igzip._IndexedGzipFile(fileobj=fileobj) as f:
+        assert f.read() == b"hello world"
+        f.seek(3)
+        assert f.read() == b"lo world"
+        f.seek(20)
+        assert f.read() == b""
+
+
+def test_read_with_null_padding(testfile, nelems):
+
+    fileobj = BytesIO(open(testfile, "rb").read() + b"\0" * 100)
+    
+    with igzip._IndexedGzipFile(fileobj=fileobj) as f:
+        data = f.read(nelems * 8)
+        # Read a bit further so we reach the zero-padded area.
+        # This line should not throw an exception.
+        f.read(1)
+    
+    data = np.ndarray(shape=nelems, dtype=np.uint64, buffer=data)
+
+    # Check that every value is valid
+    assert check_data_valid(data, 0)
+
+
 def test_read_beyond_end(concat, drop):
     with tempdir() as tdir:
         nelems   = 65536
