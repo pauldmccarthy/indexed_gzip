@@ -1671,7 +1671,7 @@ static int _zran_inflate(zran_index_t *index,
              # the read buffer size.
              */
             if ((uint64_t) ftell_(index->fd, index->f) >= index->compressed_size) {
-                if (strm->avail_in >= 9) {
+                if (strm->avail_in > 8) {
                     /* We have two cases here: A) everything remaining in strm->next_in is null bytes
                      * (in which case we have essentially reached ZRAN_INFLATE_EOF) or
                      * B) strm->next_in contains some compressed data and the entire 8-byte footer within it.
