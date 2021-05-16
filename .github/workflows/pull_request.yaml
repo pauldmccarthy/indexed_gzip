@@ -55,6 +55,7 @@ jobs:
   test-32bit:
     runs-on: ubuntu-latest
     container: i386/ubuntu:18.04
+    continue-on-error: true
     strategy:
       matrix:
         python-version: [2.7, 3.8]
