@@ -1256,6 +1256,13 @@ static int _zran_inflate(zran_index_t *index,
     zran_point_t *start = NULL;
 
     /*
+     * Used to handle null padding at the end
+     * of .gz files.
+     */
+    int all_null_bytes;
+    uint64_t i;
+
+    /*
      * If ZRAN_INFLATE_INIT_READBUF is not set,
      * make sure that a read buffer exists.
      *
@@ -1652,7 +1659,8 @@ static int _zran_inflate(zran_index_t *index,
              * End of file. The GZIP file
              * footer takes up 8 bytes, which
              * do not get processed by the
-             * inflate function.
+             * inflate function (along with any
+             * null byte padding that follows it).
              *
              * We use ftell rather than feof,
              * as the EOF indicator only gets
@@ -1662,24 +1670,48 @@ static int _zran_inflate(zran_index_t *index,
              * size is an exact multiple of
              # the read buffer size.
              */
-            if ((uint64_t) ftell_(index->fd, index->f) >= index->compressed_size &&
-                strm->avail_in <= 8) {
+            if ((uint64_t) ftell_(index->fd, index->f) >= index->compressed_size) {
+                if (strm->avail_in >= 9) {
+                    /* We have two cases here: A) everything remaining in strm->next_in is null bytes
+                     * (in which case we have essentially reached ZRAN_INFLATE_EOF) or
+                     * B) strm->next_in contains some compressed data and the entire 8-byte footer within it.
+                     * We can distinguish A) from B) by reading the remainder of strm->next_in.
+                     * If they're all null bytes, we're in A). Otherwise, we're in B).
+                     */
+                    all_null_bytes = 1;
+                    for (i = 0; i < strm->avail_in && all_null_bytes; i++) {
+                        all_null_bytes &= *(strm->next_in + i) == '\0';
+                    }
 
-                zran_log("End of file, stopping inflation\n");
-
-                return_val = ZRAN_INFLATE_EOF;
-
-                /*
-                 * We now know how big the
-                 * uncompressed data is.
-                 */
-                if (index->uncompressed_size == 0) {
-
-                    zran_log("Updating uncompressed data "
-                             "size: %llu\n", uncmp_offset);
-                    index->uncompressed_size = uncmp_offset;
+                    if (all_null_bytes) {
+                        // We're in case A), so let's skip all the null bytes. We'll
+                        // end up returning ZRAN_INFLATE_EOF.
+                        strm->next_in += i;
+                        strm->avail_in -= i;
+                    }
+                    // Else, we're in case B).
                 }
-                break;
+                if (strm->avail_in <= 8) {
+                    /*
+                     * In this case, either strm->next_in contains just the footer / part of
+                     * the footer in it or we are coming here from case A).
+                     */
+                    zran_log("End of file, stopping inflation\n");
+
+                    return_val = ZRAN_INFLATE_EOF;
+
+                    /*
+                    * We now know how big the
+                    * uncompressed data is.
+                    */
+                    if (index->uncompressed_size == 0) {
+
+                        zran_log("Updating uncompressed data "
+                                "size: %llu\n", uncmp_offset);
+                        index->uncompressed_size = uncmp_offset;
+                    }
+                    break;
+                }
             }
 
             /*
