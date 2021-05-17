@@ -1673,10 +1673,7 @@ static int _zran_inflate(zran_index_t *index,
             if ((uint64_t) ftell_(index->fd, index->f) >= index->compressed_size) {
                 if (strm->avail_in > 8) {
                     /* We have two cases here: A) everything remaining in strm->next_in is null bytes
-                     * (in which case we have essentially reached ZRAN_INFLATE_EOF) or
-                     * B) strm->next_in contains some compressed data and the entire 8-byte footer within it.
-                     * We can distinguish A) from B) by reading the remainder of strm->next_in.
-                     * If they're all null bytes, we're in A). Otherwise, we're in B).
+                     * B) strm->next_in contains some uncompressed data and/or part of the footer in it.
                      */
                     all_null_bytes = 1;
                     for (i = 0; i < strm->avail_in && all_null_bytes; i++) {
@@ -1684,12 +1681,17 @@ static int _zran_inflate(zran_index_t *index,
                     }
 
                     if (all_null_bytes) {
-                        // We're in case A), so let's skip all the null bytes. We'll
-                        // end up returning ZRAN_INFLATE_EOF.
+                        /* We're in case A), meaning that we're in the null padding that succeeds
+                         * the footer. Let's skip all these null bytes, and we'll
+                         * end up returning ZRAN_INFLATE_EOF.
+                         */
                         strm->next_in += i;
                         strm->avail_in -= i;
                     }
-                    // Else, we're in case B).
+                    /* Else, we're in case B). There's a chance we still have more compressed data to read
+                     * (we can't distinguish between compressed data and the footer because the footer may
+                     * itself contain trailing null bytes), so we continue to process these bytes with inflate.
+                     */
                 }
                 if (strm->avail_in <= 8) {
                     /*
