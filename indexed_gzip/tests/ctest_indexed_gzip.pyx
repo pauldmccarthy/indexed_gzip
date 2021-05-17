@@ -372,8 +372,12 @@ def test_read_all(testfile, nelems, use_mmap, drop):
 
 
 def test_simple_read_with_null_padding():
-
-    fileobj = BytesIO(gzip.compress(b"hello world") + b"\0" * 100)
+    
+    with tempfile.NamedTemporaryFile() as file_in, tempfile.NamedTemporaryFile() as file_out:
+        file_in.write(b"hello world")
+        file_in.flush()
+        compress(file_in.name, file_out.name)
+        fileobj = BytesIO(open(file_out.name, "rb").read() + b"\0" * 100)
     
     with igzip._IndexedGzipFile(fileobj=fileobj) as f:
         assert f.read() == b"hello world"
