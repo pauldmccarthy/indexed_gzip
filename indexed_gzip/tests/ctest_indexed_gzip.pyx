@@ -25,7 +25,7 @@ import                    tempfile
 import                    contextlib
 
 import numpy as np
-from io import BytesIO
+from io import BytesIO, UnsupportedOperation
 import pytest
 
 import indexed_gzip as igzip
@@ -881,10 +881,30 @@ def test_import_export_index():
         # Test exporting to / importing from a file-like object
         idxf = BytesIO()
         with igzip._IndexedGzipFile(fname) as f:
+            f.build_full_index()
             f.export_index(fileobj=idxf)
         idxf.seek(0)
         with igzip._IndexedGzipFile(fname) as f:
             f.import_index(fileobj=idxf)
+            f.seek(65535 * 8)
+            val = np.frombuffer(f.read(8), dtype=np.uint64)
+            assert val[0] == 65535
+
+        # Test creating the index when file is unseekable, then using the index when file is seekable.
+        fileobj = open(fname, 'rb')
+        def new_seek(*args, **kwargs):
+            raise UnsupportedOperation
+        old_seek = fileobj.seek
+        fileobj.seekable = lambda: False
+        fileobj.seek = new_seek
+        # generate an index file
+        with igzip._IndexedGzipFile(fileobj) as f:
+            f.build_full_index()
+            f.export_index(idxfname)
+        fileobj.seek = old_seek
+        fileobj.seekable = lambda: True
+        # Check that index file works via __init__
+        with igzip._IndexedGzipFile(fileobj, index_file=idxfname) as f:
             f.seek(65535 * 8)
             val = np.frombuffer(f.read(8), dtype=np.uint64)
             assert val[0] == 65535

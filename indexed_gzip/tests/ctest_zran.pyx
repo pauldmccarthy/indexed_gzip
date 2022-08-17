@@ -369,6 +369,14 @@ def test_getc():
         PyErr_Clear()
 
 
+def test_seekable():
+
+    f = BytesIO(b"abc")
+    assert zran_file_util._seekable_python(<PyObject*>f) == 1
+    f.seekable = lambda: False
+    assert zran_file_util._seekable_python(<PyObject*>f) == 0
+
+
 def test_init(testfile, no_fds):
     """Tests a bunch of permutations of the parameters to zran_init. """
 

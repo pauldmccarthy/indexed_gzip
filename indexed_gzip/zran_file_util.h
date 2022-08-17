@@ -61,6 +61,11 @@ size_t _fwrite_python(const void *ptr, size_t size, size_t nmemb, PyObject *f);
 int _getc_python(PyObject *f);
 
 /*
+ * Calls the .seekable() method on Python file-like objects.
+ */
+int _seekable_python(PyObject *f);
+
+/*
  * Calls ferror on fd if specified, otherwise the Python-specific method on f.
  */
 int ferror_(FILE *fd, PyObject *f);
@@ -101,5 +106,10 @@ size_t fwrite_(
  */
 int getc_(FILE *fd, PyObject *f);
 
+/*
+ * Returns whether the given file is seekable. If fd is specified, assumes it's always seekable.
+ * If f is specified, calls f.seekable() to see if the Python file object is seekable.
+ */
+int seekable_(FILE *fd, PyObject *f);
 
 #endif /* __ZRAN_FILE_UTIL_H__ */

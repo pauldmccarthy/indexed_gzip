@@ -43,6 +43,9 @@ if not sys.platform.startswith("win"):
     def test_getc():
         ctest_zran.test_getc()
 
+    def test_seekable():
+        ctest_zran.test_seekable()
+
     def test_init(testfile):
         for no_fds in (True, False):
             ctest_zran.test_init(testfile, no_fds)

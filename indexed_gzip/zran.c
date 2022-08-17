@@ -644,16 +644,21 @@ int zran_init(zran_index_t *index,
     /*
      * Calculate the size of the compressed file
      */
-    if (fseek_(fd, f, 0, SEEK_END) != 0)
-        goto fail;
+    if (seekable_(fd, f)) {
+        if (fseek_(fd, f, 0, SEEK_END) != 0)
+            goto fail;
 
-    compressed_size = ftell_(fd, f);
+        compressed_size = ftell_(fd, f);
 
-    if (compressed_size < 0)
-        goto fail;
+        if (compressed_size < 0)
+            goto fail;
 
-    if (fseek_(fd, f, 0, SEEK_SET) != 0)
-        goto fail;
+        if (fseek_(fd, f, 0, SEEK_SET) != 0)
+            goto fail;
+    } else {
+        // File is not seekable, so don't calculate compressed_size.
+        compressed_size = 0;
+    }
 
     /*
      * Allocate some initial space

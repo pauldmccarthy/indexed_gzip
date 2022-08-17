@@ -26,6 +26,8 @@ cdef extern from "zran_file_util.h":
     
     int _getc_python(PyObject *f)
 
+    int _seekable_python(PyObject *f)
+
     int ferror_(FILE *fd, PyObject *f)
 
     int fseek_(FILE *fd, PyObject *f, int64_t offset, int whence)
@@ -41,3 +43,5 @@ cdef extern from "zran_file_util.h":
     size_t fwrite_(const void *ptr, size_t size, size_t nmemb, FILE *fd, PyObject *f)
 
     int getc_(FILE *fd, PyObject *f)
+
+    int seekable_(FILE *fd, PyObject *f)
