@@ -1,5 +1,5 @@
 # indexed_gzip
-
+ 
 
 [![PyPi version](https://img.shields.io/pypi/v/indexed_gzip.svg)](https://pypi.python.org/pypi/indexed_gzip/) [![Anaconda version](https://anaconda.org/conda-forge/indexed_gzip/badges/version.svg)](https://anaconda.org/conda-forge/indexed_gzip/)![Test status](https://github.com/pauldmccarthy/indexed_gzip/actions/workflows/master.yaml/badge.svg)
 
