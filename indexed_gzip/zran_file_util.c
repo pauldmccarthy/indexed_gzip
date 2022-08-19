@@ -265,7 +265,10 @@ fail:
  * object is unseekable.
  */
 int _seekable_python2(PyObject *f) {
-    return _ftell_python(f) >= 0;
+    int64_t ret;
+    ret =_ftell_python(f);
+    PyErr_Clear();
+    return ret >= 0;
 }
 
 /*
