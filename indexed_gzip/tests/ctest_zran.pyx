@@ -397,7 +397,7 @@ def test_init(testfile, no_fds):
                                      readbuf_sizes,
                                      flags):
 
-            result = not zran.zran_init(&index, NULL if no_fds else cfid, <PyObject*>pyfid if no_fds else NULL, s, w, r, f)
+            result = not zran.zran_init(&index, NULL if no_fds else cfid, <PyObject*>pyfid if no_fds else NULL, s, w, r, 0, f)
 
             expected = True
 
@@ -438,7 +438,7 @@ def test_init_file_modes(testfile, no_fds):
             # If no_fds is set, we can't detect the mode, so reading is always allowed.
             expected = 1 if no_fds else mode == 'r'
 
-            result = not zran.zran_init(&index, NULL if no_fds else cfid, <PyObject*>pyfid if no_fds else NULL, 0, 0, 0, 0)
+            result = not zran.zran_init(&index, NULL if no_fds else cfid, <PyObject*>pyfid if no_fds else NULL, 0, 0, 0, 0, 0)
 
             assert result == expected
 
@@ -468,6 +468,7 @@ def test_no_auto_build(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   0)
 
         assert zran.zran_seek(&index, 0, SEEK_SET, NULL) == zran.ZRAN_SEEK_OK
@@ -521,6 +522,7 @@ def test_seek_to_end(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         assert zran.zran_seek(&index, seek_point, SEEK_SET, NULL) == 0
@@ -550,6 +552,7 @@ def test_seek_cur(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         while curelem < nelems:
@@ -593,6 +596,7 @@ def test_seek_end(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         assert zran.zran_seek(&index, -10, SEEK_END, NULL) == zran.ZRAN_SEEK_INDEX_NOT_BUILT
@@ -657,6 +661,7 @@ def test_seek_beyond_end(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         for sp in seekpoints:
@@ -707,6 +712,7 @@ def test_sequential_seek_to_end(testfile, no_fds, nelems, niters):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         for sp in seek_points:
@@ -753,6 +759,7 @@ def test_random_seek(testfile, no_fds, nelems, niters, seed):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         for sp in seekpoints:
@@ -787,6 +794,7 @@ def test_read_all(testfile, no_fds, nelems, use_mmap):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         nbytes = zran.zran_read(&index, buffer, filesize)
@@ -823,6 +831,7 @@ def test_seek_then_read_block(testfile, no_fds, nelems, niters, seed, use_mmap):
                              indexSpacing,
                              32768,
                              131072,
+                             0,
                              zran.ZRAN_AUTO_BUILD)
         assert not ret, ret
 
@@ -885,6 +894,7 @@ def test_random_seek_and_read(testfile, no_fds, nelems, niters, seed):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         for se in seekelems:
@@ -925,6 +935,7 @@ def test_read_all_sequential(testfile, no_fds, nelems):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         for se in seekelems:
@@ -960,6 +971,7 @@ def test_build_then_read(testfile, no_fds, nelems, seed, use_mmap):
                                   indexSpacing,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
         assert not zran.zran_build_index(&index, 0, 0)
@@ -1017,6 +1029,7 @@ def test_readbuf_spacing_sizes(testfile, no_fds, nelems, niters, seed):
                                       spacing,
                                       32768,
                                       bufsize,
+                                      0,
                                       zran.ZRAN_AUTO_BUILD)
 
             for i, se in enumerate(seekelems):
@@ -1089,6 +1102,7 @@ def test_export_then_import(testfile, no_fds):
                                   indexSpacing,
                                   windowSize,
                                   readbufSize,
+                                  0,
                                   flag)
 
         assert not zran.zran_build_index(&index1, 0, 0)
@@ -1106,6 +1120,7 @@ def test_export_then_import(testfile, no_fds):
                                   indexSpacing,
                                   windowSize,
                                   readbufSize,
+                                  0,
                                   flag)
 
         with open(testfile + '.idx.tmp', 'rb') as pyexportfid:
@@ -1143,6 +1158,7 @@ def test_export_import_no_points(no_fds):
                                   1048576,
                                   32768,
                                   131072,
+                                  0,
                                   0) == 0
             output = zran.zran_read(&index, buffer, 100)
             assert output  == 100, output
@@ -1163,6 +1179,7 @@ def test_export_import_no_points(no_fds):
                                   1048576,
                                   32768,
                                   131072,
+                                  0,
                                   0) == 0
 
             with open('data.gz.index', 'rb') as pyidxfid:
@@ -1192,7 +1209,7 @@ def test_export_import_format_v0():
         with open('data.gz', 'rb')  as pyfid:
             cfid = fdopen(pyfid.fileno(), 'rb')
             assert not zran.zran_init(
-                &index1, cfid, NULL, 50000, 32768, 131072, 0)
+                &index1, cfid, NULL, 50000, 32768, 131072, 0, 0)
 
             assert not zran.zran_build_index(&index1, 0, 0)
             _write_index_file_v0(&index1, 'data.gz.index')
@@ -1200,7 +1217,7 @@ def test_export_import_format_v0():
         with open('data.gz', 'rb')  as pyfid:
             cfid = fdopen(pyfid.fileno(), 'rb')
             assert not zran.zran_init(
-                &index2, cfid, NULL, 50000, 32768, 131072, 0)
+                &index2, cfid, NULL, 50000, 32768, 131072, 0, 0)
 
             with open('data.gz.index', 'rb') as pyidxfid:
                 cidxfid = fdopen(pyidxfid.fileno(), 'rb')
@@ -1261,6 +1278,7 @@ def test_crc_validation(concat):
                                   1048576,
                                   32768,
                                   131072,
+                                  0,
                                   flags)
 
     def _run_crc_tests(shouldpass, flags=zran.ZRAN_AUTO_BUILD):
@@ -1396,6 +1414,7 @@ def test_standard_usage_with_null_padding(concat):
                                   1048576,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
 
     _zran_init()
@@ -1440,6 +1459,7 @@ def test_inflateInit_leak_on_error():
                                   1048576,
                                   32768,
                                   131072,
+                                  0,
                                   zran.ZRAN_AUTO_BUILD)
         assert zran.zran_seek(&index, 20, SEEK_SET, NULL) == \
             zran.ZRAN_SEEK_FAIL
@@ -1495,6 +1515,7 @@ def test_read_eof_memmove_rotate_bug(seed):
                                       4194304,
                                       32768,
                                       readbuf_size,
+                                      0,
                                       zran.ZRAN_AUTO_BUILD)
 
             eof = nelems * 8 - 1

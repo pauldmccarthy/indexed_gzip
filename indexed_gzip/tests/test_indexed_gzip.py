@@ -160,6 +160,12 @@ def test_get_index_seek_points():
 def test_import_export_index():
     ctest_indexed_gzip.test_import_export_index()
 
+def test_import_export_index_open_file():
+    ctest_indexed_gzip.test_import_export_index_open_file()
+
+def test_build_index_from_unseekable():
+    ctest_indexed_gzip.test_build_index_from_unseekable()
+
 def test_wrapper_class():
     ctest_indexed_gzip.test_wrapper_class()
 

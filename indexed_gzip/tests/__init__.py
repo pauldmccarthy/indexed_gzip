@@ -39,6 +39,11 @@ def tempdir():
     return ctx()
 
 
+def touch(path):
+    """Create an enpty file."""
+    with open(path, 'wt') as f:
+        pass
+
 
 def poll(until):
     """Waits until ``until`` returns ``True``, printing out a message every
