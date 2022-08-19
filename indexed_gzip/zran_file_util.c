@@ -258,6 +258,16 @@ fail:
     return -1;
 }
 
+
+/*
+ * Hacky implementation of seekable() for Python 2.
+ * If f.tell() returns an error, assume that the
+ * object is unseekable.
+ */
+int _seekable_python2(PyObject *f) {
+    return _ftell_python(f) >= 0;
+}
+
 /*
  * Calls ferror on fd if specified, otherwise the Python-specific method on f.
  */
@@ -332,5 +342,9 @@ int getc_(FILE *fd, PyObject *f) {
  * If f is specified, calls f.seekable() to see if the Python file object is seekable.
  */
 int seekable_(FILE *fd, PyObject *f) {
+    #if PY_MAJOR_VERSION > 2
     return fd != NULL ? 1: _seekable_python(f);
+    #else
+    return fd != NULL ? 1: _seekable_python2(f);
+    # endif
 }
