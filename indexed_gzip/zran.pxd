@@ -71,6 +71,7 @@ cdef extern from "zran.h":
                   uint32_t      spacing,
                   uint32_t      window_size,
                   uint32_t      readbuf_size,
+                  uint64_t      compressed_size,
                   uint16_t      flags)
 
     void zran_free(zran_index_t *index)

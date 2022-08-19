@@ -591,11 +591,12 @@ int zran_init(zran_index_t *index,
               uint32_t      spacing,
               uint32_t      window_size,
               uint32_t      readbuf_size,
+              uint64_t      compressed_size,
               uint16_t      flags)
 {
 
+    int64_t       cmpsize;
     zran_point_t *point_list = NULL;
-    int64_t       compressed_size;
 
     zran_log("zran_init(%u, %u, %u, %u)\n",
              spacing, window_size, readbuf_size, flags);
@@ -635,29 +636,32 @@ int zran_init(zran_index_t *index,
      * window size.
      */
     if (spacing <= window_size)
-      goto fail;
+        goto fail;
 
     /* The file must be opened in read-only mode */
     if (!is_readonly(fd, f))
         goto fail;
 
     /*
-     * Calculate the size of the compressed file
+     * Calculate the size of the compressed file.
+     * For unseekable file-likes, the compressed size
+     * must be provided.
      */
+    if (compressed_size == 0 && !seekable_(fd, f))
+        goto fail;
+
     if (seekable_(fd, f)) {
         if (fseek_(fd, f, 0, SEEK_END) != 0)
             goto fail;
 
-        compressed_size = ftell_(fd, f);
+        cmpsize = ftell_(fd, f);
 
         if (compressed_size < 0)
             goto fail;
 
         if (fseek_(fd, f, 0, SEEK_SET) != 0)
             goto fail;
-    } else {
-        // File is not seekable, so don't calculate compressed_size.
-        compressed_size = 0;
+        compressed_size = cmpsize;
     }
 
     /*
@@ -1366,9 +1370,8 @@ static int _zran_read_data_from_file(zran_index_t *index,
         memmove(index->readbuf, stream->next_in, stream->avail_in);
     }
 
-    zran_log("Reading from file %llu [== %llu?] "
+    zran_log("Reading from file %llu "
              "[into readbuf offset %u]\n",
-             ftell_(index->fd, index->f),
              cmp_offset + stream->avail_in,
              stream->avail_in);
 
@@ -1789,9 +1792,16 @@ static int _zran_inflate(zran_index_t *index,
          * to the correct location in the file for us.
          */
         if (start == NULL) {
+          /*
+           * If the file object is not seekable,
+           * we assume that it is positiioned at
+           * the beginning of the stream.
+           */
+          if (seekable_(index->fd, index->f)) {
             if (fseek_(index->fd, index->f, 0, SEEK_SET) != 0) {
-                goto fail;
+              goto fail;
             }
+          }
 
             /*
              * In this situation, _zran_init_zlib_inflate

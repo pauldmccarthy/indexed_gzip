@@ -131,6 +131,11 @@ class IndexedGzipFile(io.BufferedReader):
                                ``io.BufferedReader.__init__``. If not provided,
                                a default value of 4 * spacing is used if spacing
                                is given else 4 MiB is used.
+
+        :arg compressed_size:  Size of the compressed data. If not provided,
+                               will be determined by calling ``seek`` and
+                               ``tell``. Must be provided for unseekable
+                               file-likes.
         """
 
         # Use 4x spacing because each raw read seeks from the last index point
@@ -297,7 +302,8 @@ cdef class _IndexedGzipFile:
                  readall_buf_size=16777216,
                  drop_handles=True,
                  index_file=None,
-                 skip_crc_check=False):
+                 skip_crc_check=False,
+                 compressed_size=0):
         """Create an ``_IndexedGzipFile``. The file may be specified either
         with an open file handle (``fileobj``), or with a ``filename``. If the
         former, the file is assumed have been opened for reading in binary
@@ -342,6 +348,11 @@ cdef class _IndexedGzipFile:
         :arg index_file:       Pre-generated index for this ``gz`` file -
                                if provided, passed through to
                                :meth:`import_index`.
+
+        :arg compressed_size:  Size of the compressed data. If not provided,
+                               will be determined by calling ``seek`` and
+                               ``tell``. Must be provided for unseekable
+                               file-likes.
         """
 
         cdef FILE *fd = NULL
@@ -419,6 +430,7 @@ cdef class _IndexedGzipFile:
                               spacing=spacing,
                               window_size=window_size,
                               readbuf_size=readbuf_size,
+                              compressed_size=compressed_size,
                               flags=flags):
                 raise ZranError('zran_init returned error (file: '
                                 '{})'.format(self.errname))

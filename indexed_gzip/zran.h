@@ -237,15 +237,18 @@ struct _zran_point {
  *                          is imported from file using zran_import_index.
  */
 int  zran_init(
-  zran_index_t *index,        /* The index                                  */
-  FILE         *fd,           /* Open handle to the compressed file         */
-  PyObject     *f,            /* Open handle to the compressed file object  */
-  uint32_t      spacing,      /* Distance in bytes between
-                                 index seek points                          */
-  uint32_t      window_size,  /* Number of uncompressed bytes
-                                 to store with each point                   */
-  uint32_t      readbuf_size, /* Number of bytes to read at a time          */
-  uint16_t      flags         /* Flags controlling index behaviour          */
+  zran_index_t *index,           /* The index                                 */
+  FILE         *fd,              /* Open handle to the compressed file        */
+  PyObject     *f,               /* Open handle to the compressed file object */
+  uint32_t      spacing,         /* Distance in bytes between
+                                    index seek points                         */
+  uint32_t      window_size,     /* Number of uncompressed bytes
+                                    to store with each point                  */
+  uint32_t      readbuf_size,    /* Number of bytes to read at a time         */
+  uint64_t      compressed_size, /* Size of the compressed file/stream - if
+                                    0, determined by calling
+                                    seek(0, SEEK_END) and then tell()         */
+  uint16_t      flags            /* Flags controlling index behaviour         */
 );
 
 
