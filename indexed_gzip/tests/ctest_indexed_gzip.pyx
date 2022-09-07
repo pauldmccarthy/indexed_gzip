@@ -926,7 +926,7 @@ def test_build_index_from_unseekable():
         # then using the index when file is seekable.
         with open(fname, 'rb') as f:
             b = f.read()
-            nbytes = len(b)
+            nbytes = 0 # use a dummy value # len(b)
             fileobj = BytesIO(b)
 
         def new_seek(*args, **kwargs):
