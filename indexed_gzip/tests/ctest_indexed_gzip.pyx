@@ -941,11 +941,11 @@ def test_build_index_from_unseekable():
           # generate an index file
           with igzip._IndexedGzipFile(fileobj, spacing=131072) as f:
               if build_full_index:
-                f.build_full_index()
+                  f.build_full_index()
               else:
-                # Build full index by reading the entire file instead. This should also work.
-                while f.read(1024):
-                  pass
+                  # Build full index by reading the entire file instead. This should also work.
+                  while f.read(1024):
+                      pass
               f.export_index(idxfname)
               points = list(f.seek_points())
           fileobj.seek = old_seek
