@@ -940,7 +940,7 @@ def test_build_index_from_unseekable():
           fileobj.tell = new_tell
           # generate an index file
           with igzip._IndexedGzipFile(fileobj, spacing=131072) as f:
-              if build_full_index:
+              if use_build_full_index:
                   f.build_full_index()
               else:
                   # Build full index by reading the entire file instead. This should also work.
