@@ -77,13 +77,24 @@ class Clean(Command):
 
 
 # Platform information
-python2   = sys.version_info[0] == 2
-noc99     = python2 or (sys.version_info[0] == 3 and sys.version_info[1] <= 4)
-windows   = sys.platform.startswith("win")
-testing   = 'INDEXED_GZIP_TESTING' in os.environ
+python2 = sys.version_info[0] == 2
+noc99   = python2 or (sys.version_info[0] == 3 and sys.version_info[1] <= 4)
+windows = sys.platform.startswith("win")
+testing = 'INDEXED_GZIP_TESTING' in os.environ
+
+# We can use zlib or zlib-ng via one
+# of the following mechanisms:
+#
+#  - Default:      Dynamically link against system zlib
+#  - ZLIB_HOME:    Path to zlib build directory - statically
+#                  link against built zlib library. Takes
+#                  precedence over ZLIB_NG_HOME
+#  - ZLIB_NG_HOME: Path to zlib-ng build directory - statically
+#                  link against built zlib-ng library
 
 # compile ZLIB source?
-ZLIB_HOME = os.environ.get("ZLIB_HOME", None)
+ZLIB_HOME    = os.environ.get('ZLIB_HOME',    None)
+ZLIB_NG_HOME = os.environ.get('ZLIB_NG_HOME', None)
 
 # Load README description
 readme = op.join(op.dirname(__file__), 'README.md')
@@ -113,39 +124,54 @@ except Exception:
     have_numpy = False
 
 print('indexed_gzip setup')
-print('  have_cython: {} (if True, modules will be cythonized, '
+print('  have_cython:  {} (if True, modules will be cythonized, '
       'otherwise pre-cythonized C files are assumed to be '
       'present)'.format(have_cython))
-print('  have_numpy:  {} (if True, test modules will '
+print('  have_numpy:   {} (if True, test modules will '
       'be compiled)'.format(have_numpy))
-print('  ZLIB_HOME:   {} (if set, ZLIB sources are compiled into '
-      'the indexed_gzip extension)'.format(ZLIB_HOME))
-print('  testing:     {} (if True, code will be compiled with line '
+print('  ZLIB_HOME:    {} (if set, indexed_gzip is linked against '
+      'zlib)'.format(ZLIB_HOME))
+print('  ZLIB_NG_HOME: {} (if set, indexed_gzip is linked against '
+      'zlib-ng (unless ZLIB_HOME is also set)'.format(ZLIB_NG_HOME))
+print('  testing:      {} (if True, code will be compiled with line '
       'tracing enabled)'.format(testing))
 
 
 # compile flags
-include_dirs        = ['indexed_gzip']
+include_dirs        = ['zran']
 lib_dirs            = []
 libs                = []
 extra_srcs          = []
+extra_objects       = []
 extra_compile_args  = []
 compiler_directives = {'language_level' : 2}
 define_macros       = []
 
+# Link against zlib built in ZLIB_HOME
 if ZLIB_HOME is not None:
     include_dirs.append(ZLIB_HOME)
-    extra_srcs.extend(glob.glob(op.join(ZLIB_HOME, '*.c')))
+    if windows: extra_objects.append(op.join(ZLIB_HOME, 'zlibstatic.lib'))
+    else:       extra_objects.append(op.join(ZLIB_HOME, 'libz.a'))
+
+# Link against zlib built in ZLIB_NG_HOME
+elif ZLIB_NG_HOME is not None:
+    include_dirs .append(ZLIB_NG_HOME)
+    define_macros.append(('ZRAN_USE_ZLIB_NG', '1'))
+    if windows: extra_objects.append(op.join(ZLIB_NG_HOME, 'zlib-ngstatic.lib'))
+    else:       extra_objects.append(op.join(ZLIB_NG_HOME, 'libz-ng.a'))
+
+# Link against system zlib
+else:
+    if windows: libs.append('zlib')
+    else:       libs.append('z')
 
 # If numpy is present, we need
 # to include the headers
 if have_numpy:
     include_dirs.append(np.get_include())
 
+# Windows specific flags
 if windows:
-    if ZLIB_HOME is None:
-        libs.append('zlib')
-
     # For stdint.h which is not included in the old Visual C
     # compiler used for Python 2
     if python2:
@@ -156,12 +182,8 @@ if windows:
     if noc99:
         extra_compile_args += ['-DNO_C99']
 
-# linux / macOS
+# linux / macOS specific flags
 else:
-    # if ZLIB_HOME is set, statically link,
-    # rather than use system-provided zlib
-    if ZLIB_HOME is None:
-        libs.append('z')
     extra_compile_args += ['-Wall', '-Wno-unused-function']
 
 if testing:
@@ -183,6 +205,7 @@ igzip_ext = Extension(
     library_dirs=lib_dirs,
     include_dirs=include_dirs,
     extra_compile_args=extra_compile_args,
+    extra_objects=extra_objects,
     define_macros=define_macros)
 
 # Optional test modules
@@ -194,6 +217,7 @@ test_exts = [
         libraries=libs,
         library_dirs=lib_dirs,
         include_dirs=include_dirs,
+        extra_objects=extra_objects,
         extra_compile_args=extra_compile_args,
         define_macros=define_macros)
 ]
@@ -208,6 +232,7 @@ if not windows:
         libraries=libs,
         library_dirs=lib_dirs,
         include_dirs=include_dirs,
+        extra_objects=extra_objects,
         extra_compile_args=extra_compile_args,
         define_macros=define_macros))
 
