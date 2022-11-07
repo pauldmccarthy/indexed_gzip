@@ -40,6 +40,7 @@ class Clean(Command):
     def run(self):
 
         base    = op.dirname(__file__)
+        zrbase  = op.join(base, 'zran')
         igzbase = op.join(base, 'indexed_gzip')
 
         shutil.rmtree(op.join(base, 'build'),
@@ -60,8 +61,8 @@ class Clean(Command):
         files = [
             '*.so',
             op.join(igzbase, 'indexed_gzip.c'),
-            op.join(igzbase, 'zran.o'),
-            op.join(igzbase, 'zran_file_util.o'),
+            op.join(zrbase,  'zran.o'),
+            op.join(zrbase,  'zran_file_util.o'),
             op.join(igzbase, '*.pyc'),
             op.join(igzbase, '*.so'),
             op.join(igzbase, 'tests', '*.so'),
@@ -176,8 +177,8 @@ else:           pyx_ext = 'c'
 igzip_ext = Extension(
     'indexed_gzip.indexed_gzip',
     [op.join('indexed_gzip', 'indexed_gzip.{}'.format(pyx_ext)),
-     op.join('indexed_gzip', 'zran.c'),
-     op.join('indexed_gzip', 'zran_file_util.c')] + extra_srcs,
+     op.join('zran',         'zran.c'),
+     op.join('zran',         'zran_file_util.c')] + extra_srcs,
     libraries=libs,
     library_dirs=lib_dirs,
     include_dirs=include_dirs,
@@ -202,8 +203,8 @@ if not windows:
     test_exts.append(Extension(
         'indexed_gzip.tests.ctest_zran',
         [op.join('indexed_gzip', 'tests', 'ctest_zran.{}'.format(pyx_ext)),
-         op.join('indexed_gzip', 'zran.c'),
-         op.join('indexed_gzip', 'zran_file_util.c')] + extra_srcs,
+         op.join('zran',         'zran.c'),
+         op.join('zran',         'zran_file_util.c')] + extra_srcs,
         libraries=libs,
         library_dirs=lib_dirs,
         include_dirs=include_dirs,
