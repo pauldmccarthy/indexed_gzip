@@ -1,6 +1,12 @@
 #ifndef __ZRAN_H__
 #define __ZRAN_H__
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /*
  * The zran module is an adaptation of the zran example, written by Mark
  * Alder, which ships with the zlib source code. It allows the creation
@@ -501,5 +507,9 @@ int zran_import_index(
   FILE          *fd,    /* Open handle to import file        */
   PyObject      *f      /* Open handle to import file object */
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZRAN_H__ */
