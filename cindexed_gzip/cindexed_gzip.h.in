@@ -16,6 +16,13 @@ extern "C" {
 #include "zran.h"
 
 /*
+ * Version string, defined in indexed_gzip/__init__.py (see
+ * cindexed_gzip/Makefile).
+ */
+#define CINDEXED_GZIP_VERSION "@INDEXED_GZIP_VERSION@"
+
+
+/*
  * Struct representing a file which has been loaded via igz_open.
  */
 struct _igz_file;

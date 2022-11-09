@@ -14,6 +14,7 @@ LIBS                     =
 OBJFILES                 = zran.o zran_file_util.o cindexed_gzip.o
 PYTHON_INCLUDE_DIRECTORY = $(shell ${PYTHON} -c "from sysconfig import get_paths;  print(get_paths()['include'])")
 CFLAGS                  += -I${PYTHON_INCLUDE_DIRECTORY}
+INDEXED_GZIP_VERSION     = $(shell cat ../indexed_gzip/__init__.py | grep __version__ | cut -d ' ' -f 3 | tr -d "'")
 
 # statically link against built zlib
 ifdef ZLIB_HOME
@@ -30,7 +31,23 @@ endif
 
 
 clean:
-	rm -f *.o *.so *.a
+	rm -f *.o *.so *.a cindexed_gzip.h
+
+
+cindexed_gzip.h: cindexed_gzip.h.in
+	sed -e "s/@INDEXED_GZIP_VERSION@/${INDEXED_GZIP_VERSION}/" $< > $@
+
+
+%.o: %.c cindexed_gzip.h
+	${CC} ${CFLAGS} -c -o $@ $<
+
+
+libcindexed_gzip.so: ${OBJFILES}
+	${CC} ${CFLAGS} -shared -o $@ $^ ${LDFLAGS} ${LIBS}
+
+
+libcindexed_gzip_static.a: ${OBJFILES}
+	${AR} -r $@ $^ ${LIBS}
 
 
 install:
@@ -44,15 +61,3 @@ endif
 	cp libcindexed_gzip_static.a ${PREFIX}/lib/
 	cp cindexed_gzip.h           ${PREFIX}/include/cindexed_gzip/
 	cp zran.h                    ${PREFIX}/include/cindexed_gzip/
-
-
-%.o: %.c
-	${CC} ${CFLAGS} -c -o $@ $^
-
-
-libcindexed_gzip.so: ${OBJFILES}
-	${CC} ${CFLAGS} -shared -o $@ $^ ${LDFLAGS} ${LIBS}
-
-
-libcindexed_gzip_static.a: ${OBJFILES}
-	${AR} -r $@ $^ ${LIBS}
