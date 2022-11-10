@@ -19,26 +19,25 @@
 #include "zlib.h"
 #endif
 
+#ifdef ZRAN_SUPPORT_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#endif
 
 #ifdef _WIN32
 #include "windows.h"
 #include "io.h"
-static int is_readonly(FILE *fd, PyObject *f)
+static int is_readonly(FILE *fd)
 {
     /* Can't find a way to do this correctly under
-       Windows and the check is not required anyway
-       since the underlying Python module checks it
-       already */
+       Windows */
     return 1;
 }
 #else
 #include <fcntl.h>
 /* Check if file is read-only */
-static int is_readonly(FILE *fd, PyObject *f)
+static int is_readonly(FILE *fd)
 {
-    /* Skip the test for python file-likes */
     return fd != NULL
       ? (fcntl(fileno(fd), F_GETFL) & O_ACCMODE) == O_RDONLY
       : 1;
@@ -661,7 +660,7 @@ int zran_init(zran_index_t *index,
         goto fail;
 
     /* The file must be opened in read-only mode */
-    if (!is_readonly(fd, f))
+    if (!is_readonly(fd))
         goto fail;
 
     /*
@@ -3236,7 +3235,7 @@ int zran_import_index(zran_index_t *index,
     index->flags |= ZRAN_SKIP_CRC_CHECK;
 
     /* Check if file is read only. */
-    if (!is_readonly(fd, f)) goto fail;
+    if (!is_readonly(fd)) goto fail;
 
     /* Read ID, and check for file errors and EOF. */
     f_ret = fread_(file_id, sizeof(file_id), 1, fd, f);

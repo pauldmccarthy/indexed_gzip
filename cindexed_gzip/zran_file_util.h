@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifndef ZRAN_SUPPORT_PYTHON
+#define PyObject void
+#else
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
@@ -64,6 +67,8 @@ int _getc_python(PyObject *f);
  * Calls the .seekable() method on Python file-like objects.
  */
 int _seekable_python(PyObject *f);
+
+#endif /* ZRAN_SUPPORT_PYTHON */
 
 /*
  * Calls ferror on fd if specified, otherwise the Python-specific method on f.

@@ -12,8 +12,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifdef ZRAN_SUPPORT_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#endif
 
 #include "zran_file_util.h"
 
@@ -27,6 +29,9 @@
 #define FTELL ftello
 #endif
 
+
+#ifdef ZRAN_SUPPORT_PYTHON
+
 /*
  * The zran functions are typically called with the GIL released. These
  * macros are used to temporarily (re-)acquire and release the GIL when
@@ -39,12 +44,14 @@
 #define _ZRAN_FILE_UTIL_RELEASE_GIL \
     PyGILState_Release(s);
 
-
 /*
  * Implements a method analogous to fread that is performed on Python
  * file-like objects.
  */
-size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
+size_t _fread_python(void     *ptr,
+                     size_t    size,
+                     size_t    nmemb,
+                     PyObject *f) {
 
     PyObject  *data = NULL;
     char      *buf;
@@ -273,27 +280,42 @@ int _seekable_python2(PyObject *f) {
     return ret >= 0;
 }
 
+
+#endif /* ZRAN_SUPPORT_PYTHON */
+
 /*
  * Calls ferror on fd if specified, otherwise the Python-specific method on f.
  */
 int ferror_(FILE *fd, PyObject *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL ? ferror(fd) : _ferror_python(f);
+    #else
+    return ferror(fd);
+    #endif
 }
 
 /*
  * Calls fseek on fd if specified, otherwise the Python-specific method on f.
  */
 int fseek_(FILE *fd, PyObject *f, int64_t offset, int whence) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL
         ? FSEEK(fd, offset, whence)
         : _fseek_python(f, offset, whence);
+    #else
+    return FSEEK(fd, offset, whence);
+    #endif
 }
 
 /*
  * Calls ftell on fd if specified, otherwise the Python-specific method on f.
  */
 int64_t ftell_(FILE *fd, PyObject *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL ? FTELL(fd) : _ftell_python(f);
+    #else
+    return FTELL(fd);
+    #endif
 }
 
 /*
@@ -301,9 +323,13 @@ int64_t ftell_(FILE *fd, PyObject *f) {
  */
 size_t fread_(void *ptr, size_t size, size_t nmemb, FILE *fd, PyObject *f) {
 
+  #ifdef ZRAN_SUPPORT_PYTHON
   return fd != NULL
       ? fread(ptr, size, nmemb, fd)
       : _fread_python(ptr, size, nmemb, f);
+  #else
+  return fread(ptr, size, nmemb, fd);
+  #endif
 }
 
 /*
@@ -312,14 +338,22 @@ size_t fread_(void *ptr, size_t size, size_t nmemb, FILE *fd, PyObject *f) {
  * read, to determine if the file is at EOF.
  */
 int feof_(FILE *fd, PyObject *f, size_t f_ret) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL ? feof(fd): _feof_python(f, f_ret);
+    #else
+    return feof(fd);
+    #endif
 }
 
 /*
  * Calls fflush on fd if specified, otherwise the Python-specific method on f.
  */
 int fflush_(FILE *fd, PyObject *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL ? fflush(fd): _fflush_python(f);
+    #else
+    return fflush(fd);
+    #endif
 }
 
 /*
@@ -330,26 +364,39 @@ size_t fwrite_(const void *ptr,
                size_t      nmemb,
                FILE       *fd,
                PyObject   *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL
         ? fwrite(ptr, size, nmemb, fd)
         : _fwrite_python(ptr, size, nmemb, f);
+    #else
+    return fwrite(ptr, size, nmemb, fd);
+    #endif
 }
 
 /*
  * Calls getc on fd if specified, otherwise the Python-specific method on f.
  */
 int getc_(FILE *fd, PyObject *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     return fd != NULL ? getc(fd): _getc_python(f);
+    #else
+    return getc(fd);
+    #endif
 }
 
 /*
- * Returns whether the given file is seekable. If fd is specified, assumes it's always seekable.
- * If f is specified, calls f.seekable() to see if the Python file object is seekable.
+ * Returns whether the given file is seekable. If fd is specified, assumes
+ * it's always seekable.  If f is specified, calls f.seekable() to see if the
+ * Python file object is seekable.
  */
 int seekable_(FILE *fd, PyObject *f) {
+    #ifdef ZRAN_SUPPORT_PYTHON
     #if PY_MAJOR_VERSION > 2
     return fd != NULL ? 1: _seekable_python(f);
     #else
     return fd != NULL ? 1: _seekable_python2(f);
+    #endif
+    #else
+    return 1;
     #endif
 }

@@ -14,11 +14,16 @@ extern "C" {
  * of random seek/read access to the uncompressed data.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef ZRAN_SUPPORT_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#else
+#define PyObject void
+#endif
 
 struct _zran_index;
 struct _zran_point;
