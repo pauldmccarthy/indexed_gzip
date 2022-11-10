@@ -4,10 +4,11 @@
  * Both GZIP and other files may be loaded via this interface; GZIP files will
  * be read via the zran module, and other files will read normally.
  */
+#include <string.h>
 #include <stdint.h>
 
-#include "zran.h"
-#include "cindexed_gzip.h"
+#include "cindexed_gzip/zran.h"
+#include "cindexed_gzip/cindexed_gzip.h"
 
 
 /*
@@ -67,7 +68,7 @@ fail:
  * Other files will be read normally (via fseek/fread). The igz_file must be
  * passed to igz_close when it is no longer needed.
  */
-igz_file * igz_open(char *filepath) {
+igz_file * igz_open(const char *filepath) {
 
     igz_file *gzf     = NULL;
     FILE     *f       = NULL;

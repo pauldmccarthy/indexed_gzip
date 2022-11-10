@@ -138,14 +138,14 @@ print('  testing:      {} (if True, code will be compiled with line '
 
 
 # compile flags
-include_dirs        = ['zran']
+include_dirs        = ['cindexed_gzip']
 lib_dirs            = []
 libs                = []
 extra_srcs          = []
 extra_objects       = []
 extra_compile_args  = []
 compiler_directives = {'language_level' : 2}
-define_macros       = []
+define_macros       = [('ZRAN_SUPPORT_PYTHON', '1')]
 
 # Link against zlib built in ZLIB_HOME
 if ZLIB_HOME is not None:
@@ -198,9 +198,9 @@ else:           pyx_ext = 'c'
 # The indexed_gzip module
 igzip_ext = Extension(
     'indexed_gzip.indexed_gzip',
-    [op.join('indexed_gzip', 'indexed_gzip.{}'.format(pyx_ext)),
-     op.join('zran',         'zran.c'),
-     op.join('zran',         'zran_file_util.c')] + extra_srcs,
+    [op.join('indexed_gzip',  'indexed_gzip.{}'.format(pyx_ext)),
+     op.join('cindexed_gzip', 'zran.c'),
+     op.join('cindexed_gzip', 'zran_file_util.c')] + extra_srcs,
     libraries=libs,
     library_dirs=lib_dirs,
     include_dirs=include_dirs,
@@ -226,9 +226,9 @@ if not windows:
     # Uses POSIX memmap API so won't work on Windows
     test_exts.append(Extension(
         'indexed_gzip.tests.ctest_zran',
-        [op.join('indexed_gzip', 'tests', 'ctest_zran.{}'.format(pyx_ext)),
-         op.join('zran',         'zran.c'),
-         op.join('zran',         'zran_file_util.c')] + extra_srcs,
+        [op.join('indexed_gzip',  'tests', 'ctest_zran.{}'.format(pyx_ext)),
+         op.join('cindexed_gzip', 'zran.c'),
+         op.join('cindexed_gzip', 'zran_file_util.c')] + extra_srcs,
         libraries=libs,
         library_dirs=lib_dirs,
         include_dirs=include_dirs,

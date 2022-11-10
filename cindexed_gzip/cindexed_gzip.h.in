@@ -34,7 +34,7 @@ typedef struct _igz_file igz_file;
  * Other files will be read normally (via fseek/fread). The igz_file must be
  * passed to igz_close when it is no longer needed.
  */
-igz_file * igz_open(char *filepath);
+igz_file * igz_open(const char *filepath);
 
 
 /*
