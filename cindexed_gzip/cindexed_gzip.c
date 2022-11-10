@@ -158,11 +158,12 @@ int64_t igz_read(igz_file *gzf, void *buf, uint64_t len, uint64_t off) {
         }
     }
     else {
-        fseek(f, off, SEEK_SET);
-        fread(buf, len, 1, f);
+        if (fseek(f, off, SEEK_SET) != 0) {
+            goto fail;
+        }
+        bytes_read = fread(buf, 1, len, f);
     }
 
-    gzf->index.fd = NULL;
     fclose(f);
 
     return bytes_read;
@@ -171,5 +172,7 @@ fail:
     if (f != NULL) {
         fclose(f);
     }
+    gzf->index.fd = NULL;
+
     return -1;
 }
