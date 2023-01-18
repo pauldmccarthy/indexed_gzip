@@ -63,7 +63,7 @@ static double round(double val)
  *
  * #define ZRAN_VERBOSE
  */
-//#define ZRAN_VERBOSE
+#define ZRAN_VERBOSE
 
 
 #ifdef ZRAN_VERBOSE
@@ -800,6 +800,7 @@ void zran_free(zran_index_t *index) {
 /* Discard all points in the index after the specified compressed offset. */
 int _zran_invalidate_index(zran_index_t *index, uint64_t from)
 {
+    zran_log("_zran_invalidate_index", from);
     uint64_t      i;
     zran_point_t *p;
 
@@ -824,6 +825,7 @@ int _zran_invalidate_index(zran_index_t *index, uint64_t from)
     if (i <= 1) index->npoints = 0;
     else        index->npoints = i - 1;
 
+    zran_log("at the end of _zran_invalidate_index");
     return _zran_free_unused(index);
 }
 
@@ -832,8 +834,10 @@ int _zran_invalidate_index(zran_index_t *index, uint64_t from)
 int zran_build_index(zran_index_t *index, uint64_t from, uint64_t until)
 {
 
-    if (_zran_invalidate_index(index, from) != 0)
+    if (_zran_invalidate_index(index, from) != 0) {
+        zran_log("returning ZRAN_BUILD_INDEX_FAIL");
         return ZRAN_BUILD_INDEX_FAIL;
+    }
 
     return _zran_expand_index(index, until);
 }
