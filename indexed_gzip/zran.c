@@ -2462,7 +2462,7 @@ int _zran_expand_index(zran_index_t *index, uint64_t until) {
             if (z_ret == ZRAN_INFLATE_CRC_ERROR) {
                 error_return_val = ZRAN_EXPAND_INDEX_CRC_ERROR;
             }
-            zran_log("====goto fail 5, z_ret is: %u\n", z_ret);
+            zran_log("\n====goto fail 5, z_ret is: %u\n", z_ret);
             goto fail;
         }
 
