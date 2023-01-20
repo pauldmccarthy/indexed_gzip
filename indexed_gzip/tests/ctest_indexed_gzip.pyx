@@ -112,22 +112,29 @@ class GzipStream(BytesIO):
         self.__size = 0
 
     def _fill_buf_bytes(self, num_bytes=None):
-        while num_bytes is None or len(self.__buffer) < num_bytes:
-            s = self.__input.read(num_bytes)
-            print(f"In GzipStream _fill_buf_bytes, num_bytes = {num_bytes}, read in length = {len(s)}, length of buffer = {len(self.__buffer)}")
-            if not s:
-                self.__gzip.close()
-                break
-            self.__gzip.write(s)  # gzip the current file
+        try:
+            while num_bytes is None or len(self.__buffer) < num_bytes:
+                s = self.__input.read(num_bytes)
+                print(f"In GzipStream _fill_buf_bytes, num_bytes = {num_bytes}, read in length = {len(s)}, length of buffer = {len(self.__buffer)}")
+                if not s:
+                    self.__gzip.close()
+                    break
+                self.__gzip.write(s)  # gzip the current file
+        except Exception as e:
+            print("Error in _fill_buf_bytes", repr(e))
+            raise e
 
     def read(self, num_bytes=None):
-        self._fill_buf_bytes(num_bytes)
-        # print(f"In GzipStream read(). num_bytes = {num_bytes}")
-        data = self.__buffer.read(num_bytes)
-        # print(f"In GzipStream read(). num_bytes = {num_bytes}, read out data from GzipStream length = {len(data)}")
-        self.__size += len(data)
-        print(f"Size changed to {self.__size}, num_bytes was {num_bytes}, read out {len(data)}")
-        return data
+        try:
+            self._fill_buf_bytes(num_bytes)
+            data = self.__buffer.read(num_bytes)
+            # print(f"In GzipStream read(). num_bytes = {num_bytes}, read out data from GzipStream length = {len(data)}")
+            self.__size += len(data)
+            print(f"Size changed to {self.__size}, num_bytes was {num_bytes}, read out {len(data)}")
+            return data
+        except Exception as e:
+            print(repr(e))
+            
 
     def close(self):
         self.__input.close()
@@ -137,7 +144,7 @@ class GzipStream(BytesIO):
         return self.__buffer.peek(num_bytes)
     
     def tell(self):
-        print("In GzipStream, tell() is called")
+        print(f"In GzipStream, tell() is called. self.__size is {self.__size}")
         return self.__size
 
     def seekable(self):
@@ -1019,8 +1026,13 @@ def test_build_index_from_unseekable():
         fname    = op.join(td, 'test.gz')
         idxfname = op.join(td, 'test.gzidx')
 
+        tmp_filename = op.join(td, 'test.txt')
+
         # make a test file
         data = np.arange(5242, dtype=np.uint64)
+        with open(tmp_filename, 'w') as f:
+            f.write(repr(data))
+        
         with gzip.open(fname, 'wb') as f:
             f.write(data.tostring())
 
@@ -1030,7 +1042,7 @@ def test_build_index_from_unseekable():
             b = f.read()
             fileobj = BytesIO(b)
 
-        fileobj = GzipStream(data)
+        fileobj = GzipStream(open(tmp_filename, 'rb'))
 
         """def new_seek(*args, **kwargs):
             raise OSError()
@@ -1041,7 +1053,6 @@ def test_build_index_from_unseekable():
         fileobj.seekable = lambda: False
         fileobj.seek = new_seek
         fileobj.tell = new_tell"""
-
 
 
         # generate an index file

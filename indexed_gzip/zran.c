@@ -1390,6 +1390,8 @@ static int _zran_read_data_from_file(zran_index_t *index,
                    index->readbuf_size - stream->avail_in,
                    index->fd,
                    index->f);
+
+    // fread_(void *ptr, size_t size, size_t nmemb, FILE *fd, PyObject *f);
     
     zran_log("Before FAIL, the ret is %u, index->fd is %u, index->f is %u\n", f_ret, index->fd, index->f);
 

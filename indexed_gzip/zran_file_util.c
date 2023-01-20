@@ -53,12 +53,18 @@ size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
 
     _ZRAN_FILE_UTIL_ACQUIRE_GIL
 
-    if ((data = PyObject_CallMethod(f, "read", "(n)", size * nmemb)) == NULL)
+    if ((data = PyObject_CallMethod(f, "read", "(n)", size * nmemb)) == NULL){
+        zran_log("In _fread_python, go to fail 1, size * nmemb is %u\n", size*nmemb);  // GO TO HERE
         goto fail;
-    if ((buf = PyBytes_AsString(data)) == NULL)
+    }
+    if ((buf = PyBytes_AsString(data)) == NULL){
+        zran_log("In _fread_python, go to fail 2\n");
         goto fail;
-    if ((len = PyBytes_Size(data)) == -1)
+    }
+    if ((len = PyBytes_Size(data)) == -1){
+        zran_log("In _fread_python, go to fail 3\n");
         goto fail;
+    }
 
     memmove(ptr, buf, (size_t) len);
 
@@ -67,7 +73,7 @@ size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
     return (size_t) len / size;
 
 fail:
-    Py_XDECREF(data);
+    Py_XDECREF(data); // reduce a references, the `data` can be NULL
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 }
