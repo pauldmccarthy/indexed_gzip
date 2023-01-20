@@ -835,6 +835,7 @@ int zran_build_index(zran_index_t *index, uint64_t from, uint64_t until)
     if (_zran_invalidate_index(index, from) != 0) {
         return ZRAN_BUILD_INDEX_FAIL;
     }
+    zran_log("After _zran_invalidate_index(), the index->fd is: %u, index->f: %u\n", index->fd, index->f);
 
     return _zran_expand_index(index, until);
 }
@@ -1389,9 +1390,11 @@ static int _zran_read_data_from_file(zran_index_t *index,
                    index->readbuf_size - stream->avail_in,
                    index->fd,
                    index->f);
+    
+    zran_log("Before FAIL, the ret is %u, index->fd is %u, index->f is %u\n", f_ret, index->fd, index->f);
 
     if (ferror_(index->fd, index->f)) {
-        zran_log("FAIL: _zran_read_data_from_file, %u, %u, %u, %u\n", index->readbuf + stream->avail_in,
+        zran_log("FAIL: _zran_read_data_from_file, %u, %u, %u, %u, %u\n", index->readbuf + stream->avail_in,
                    1,
                    index->readbuf_size - stream->avail_in,
                    index->fd,
