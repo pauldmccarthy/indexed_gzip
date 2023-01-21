@@ -1029,20 +1029,18 @@ def test_build_index_from_unseekable():
         tmp_filename = op.join(td, 'test.txt')
 
         # make a test file
-        data = np.arange(5242, dtype=np.uint64)
-        with open(tmp_filename, 'w') as f:
-            f.write(repr(data))
+        data = b"apache-beam[azure]==2.36.0\n\n# GCP requirements for apache-beam. Note: when upgrading\n# apache-beam, make sure these requirements are also upgraded\n# accordingly according to Beam's GCP requirements\n# (https://github.com/apache/beam/blob/master/sdks/python/setup.py).\ncachetools>=3.1.0,<5\ngoogle-apitools>=0.5.31,<0.5.32\ngoogle-auth>=1.18.0,<3\n\n# Remaining requirements\nbottle==0.12.20\ndataclasses==0.7;python_version<'3.7'\ndocker==4.3.0\nmarshmallow-jsonapi==0.15.1\nmarshmallow==2.15.1\nsetuptools>=40.0.0\nargcomplete==1.12.3\nindexed_gzip==1.7.0\nratarmountcore==0.1.3\nPyYAML==5.4\npsutil==5.7.2\nsix==1.15.0\nSQLAlchemy==1.3.19\nwatchdog>=2.0.0\nfusepy==2.0.4\npygments>=2.12,<2.13\nclick==8.0.2\npython-dateutil==2.8.1\ndiffimg==0.2.3\nselenium==3.141.0\nrequests==2.25.0\nazure-storage-blob==12.4.0\nazure-core==1.8.0\nsentry-sdk==0.18.0\nrequests-oauthlib==1.1.0\noauthlib==2.1.0\nmarkdown2==2.4.0\nwheel==0.35.1\nurllib3==1.26.5\nretry==0.9.2\nspython==0.1.14\nflufl.lock==6.0\nkubernetes==12.0.1\ngoogle-cloud-storage==2.0.0\n"
         
-        with gzip.open(fname, 'wb') as f:
-            f.write(data.tostring())
+        # with gzip.open(fname, 'wb') as f:
+        #     f.write(data)
 
         # Test creating the index when file is unseekable,
         # then using the index when file is seekable.
-        with open(fname, 'rb') as f:
-            b = f.read()
-            fileobj = BytesIO(b)
+        # with open(fname, 'rb') as f:
+        #     b = f.read()
+        #     fileobj = BytesIO(b)
 
-        fileobj = GzipStream(open(tmp_filename, 'rb'))
+        fileobj = GzipStream(BytesIO(data))
 
         """def new_seek(*args, **kwargs):
             raise OSError()
