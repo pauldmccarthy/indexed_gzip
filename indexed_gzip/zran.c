@@ -598,7 +598,7 @@ int zran_init(zran_index_t *index,
     zran_point_t *point_list = NULL;
     int64_t       compressed_size;
 
-    zran_log("zran_init(%u, %u, %u, %u, %u, %u)\n",
+    zran_log("\nzran_init(%u, %u, %u, %u, %u, %u)\n",
              spacing, window_size, readbuf_size, flags, fd, f);
 
     if (spacing      == 0) spacing      = 1048576;
@@ -1604,7 +1604,7 @@ static int _zran_inflate(zran_index_t *index,
      * return_val/error_return_val is
      * the return value for this function.
      */
-    int z_ret = -100;
+    int z_ret;
     int off;
     int return_val       = ZRAN_INFLATE_OK;
     int error_return_val = ZRAN_INFLATE_ERROR;
