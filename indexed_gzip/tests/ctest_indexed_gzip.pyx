@@ -1030,7 +1030,7 @@ def test_build_index_from_unseekable():
             b = f.read()
             fileobj = BytesIO(b)
 
-        fileobj = GzipStream(data)
+        fileobj = GzipStream(BytesIO(data.tostring()))
 
         """def new_seek(*args, **kwargs):
             raise OSError()
