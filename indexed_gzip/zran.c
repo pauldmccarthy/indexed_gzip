@@ -1609,7 +1609,7 @@ static int _zran_inflate(zran_index_t *index,
      * return_val/error_return_val is
      * the return value for this function.
      */
-    int z_ret = -100;
+    int z_ret;
     int off;
     int return_val       = ZRAN_INFLATE_OK;
     int error_return_val = ZRAN_INFLATE_ERROR;
@@ -2143,7 +2143,7 @@ static int _zran_inflate(zran_index_t *index,
              * data - this is the responsibility of the caller,
              * so bail out.
              */
-            if (strm->avail_out == 0) {
+            if (strm->avail_out == 0) { // Jiani: Here error happens
 
                 zran_log("Output buffer full - stopping inflation\n");
 
