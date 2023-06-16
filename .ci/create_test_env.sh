@@ -7,6 +7,8 @@
 set -e
 set -x
 
+pip install --upgrade pip
+
 envdir="$1"
 thisdir=$(cd $(dirname "$0") && pwd)
 
