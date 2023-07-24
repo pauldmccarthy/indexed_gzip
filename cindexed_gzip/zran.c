@@ -12,28 +12,32 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "zlib.h"
 
+#ifdef ZRAN_USE_ZLIB_NG
+#include "zlib-ng.h"
+#else
+#include "zlib.h"
+#endif
+
+#ifdef ZRAN_SUPPORT_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#endif
 
 #ifdef _WIN32
 #include "windows.h"
 #include "io.h"
-static int is_readonly(FILE *fd, PyObject *f)
+static int is_readonly(FILE *fd)
 {
     /* Can't find a way to do this correctly under
-       Windows and the check is not required anyway
-       since the underlying Python module checks it
-       already */
+       Windows */
     return 1;
 }
 #else
 #include <fcntl.h>
 /* Check if file is read-only */
-static int is_readonly(FILE *fd, PyObject *f)
+static int is_readonly(FILE *fd)
 {
-    /* Skip the test for python file-likes */
     return fd != NULL
       ? (fcntl(fileno(fd), F_GETFL) & O_ACCMODE) == O_RDONLY
       : 1;
@@ -70,6 +74,25 @@ static double round(double val)
 #define zran_log(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define zran_log(...)
+#endif
+
+/* Use equivalent symbols from zlib or zlib-ng */
+#ifdef ZRAN_USE_ZLIB_NG
+#define Z_STREAM             zng_stream
+#define INFLATEINIT2         zng_inflateInit2
+#define INFLATE              zng_inflate
+#define INFLATEEND           zng_inflateEnd
+#define INFLATEPRIME         zng_inflatePrime
+#define INFLATESETDICTIONARY zng_inflateSetDictionary
+#define CRC32                zng_crc32
+#else
+#define Z_STREAM             z_stream
+#define INFLATEINIT2         inflateInit2
+#define INFLATE              inflate
+#define INFLATEEND           inflateEnd
+#define INFLATEPRIME         inflatePrime
+#define INFLATESETDICTIONARY inflateSetDictionary
+#define CRC32                crc32
 #endif
 
 
@@ -233,9 +256,7 @@ static uint64_t _zran_estimate_offset(
  */
 static int _zran_init_zlib_inflate(
     zran_index_t *index,        /* The index */
-
-    z_stream     *stream,       /* Pointer to a z_stream struct */
-
+    Z_STREAM     *stream,       /* Pointer to a z_stream struct */
     zran_point_t *point         /* Pass in NULL to initialise for inflation
                                    from the current location in the input file.
                                    Or pass a pointer to the index point
@@ -328,7 +349,7 @@ int ZRAN_READ_DATA_ERROR = -2;
  */
 static int _zran_read_data_from_file(
     zran_index_t *index,        /* The index                               */
-    z_stream     *stream,       /* The z_stream struct                     */
+    Z_STREAM     *stream,       /* The z_stream struct                     */
     uint64_t      cmp_offset,   /* Current offset in the compressed data   */
     uint64_t      uncmp_offset, /* Current offset in the uncompressed data */
     uint32_t      need_atleast  /* Skip read if the read buffer already has
@@ -361,7 +382,7 @@ int ZRAN_FIND_STREAM_NOT_FOUND = -1;
  */
 static int _zran_find_next_stream(
     zran_index_t *index,  /* The index                                      */
-    z_stream     *stream, /* The z_stream struct                            */
+    Z_STREAM     *stream, /* The z_stream struct                            */
     int          *offset  /* Used to store the number of bytes skipped over */
 );
 
@@ -388,7 +409,7 @@ int ZRAN_VALIDATE_STREAM_INVALID = -1;
  */
 static int _zran_validate_stream(
     zran_index_t *index,  /* The index                                      */
-    z_stream     *stream, /* The z_stream struct                            */
+    Z_STREAM     *stream, /* The z_stream struct                            */
     int          *offset  /* Used to store the number of bytes skipped over */
 );
 
@@ -558,7 +579,7 @@ uint32_t ZRAN_INFLATE_STOP_AT_BLOCK         = 64;
 static int _zran_inflate(
     zran_index_t *index,            /* Pointer to the index. */
 
-    z_stream     *strm,             /* Pointer to a z_stream struct. */
+    Z_STREAM     *strm,             /* Pointer to a z_stream struct. */
 
     uint64_t      offset,           /* Compressed data offset to start
                                        inflation from. */
@@ -639,7 +660,7 @@ int zran_init(zran_index_t *index,
         goto fail;
 
     /* The file must be opened in read-only mode */
-    if (!is_readonly(fd, f))
+    if (!is_readonly(fd))
         goto fail;
 
     /*
@@ -1201,7 +1222,7 @@ fail:
 
 /* Initialise the given z_stream struct for decompression/inflation. */
 int _zran_init_zlib_inflate(zran_index_t *index,
-                            z_stream     *strm,
+                            Z_STREAM     *strm,
                             zran_point_t *point) {
 
     int           ret;
@@ -1227,9 +1248,9 @@ int _zran_init_zlib_inflate(zran_index_t *index,
 
         zran_log("_zran_init_zlib_inflate from current "
                  "seek location (expecting GZIP header)\n");
-        if (inflateInit2(strm, window + 32) != Z_OK) { goto fail; }
-        if (inflate(strm, Z_BLOCK)          != Z_OK) { goto fail_free_strm; }
-        if (inflateEnd(strm)                != Z_OK) { goto fail; }
+        if (INFLATEINIT2(strm, window + 32) != Z_OK) { goto fail; }
+        if (INFLATE(strm, Z_BLOCK)          != Z_OK) { goto fail_free_strm; }
+        if (INFLATEEND(strm)                != Z_OK) { goto fail; }
     }
 
     /*
@@ -1262,7 +1283,7 @@ int _zran_init_zlib_inflate(zran_index_t *index,
      * in _zran_inflate).
      */
 
-    if (inflateInit2(strm, -window) != Z_OK) {
+    if (INFLATEINIT2(strm, -window) != Z_OK) {
         goto fail;
     }
 
@@ -1287,7 +1308,7 @@ int _zran_init_zlib_inflate(zran_index_t *index,
                 goto fail_free_strm;
             }
 
-            if (inflatePrime(strm,
+            if (INFLATEPRIME(strm,
                              point->bits, ret >> (8 - point->bits)) != Z_OK)
                 goto fail_free_strm;
         }
@@ -1296,7 +1317,7 @@ int _zran_init_zlib_inflate(zran_index_t *index,
          * Initialise the inflate stream
          * with the index point data.
          */
-        if (inflateSetDictionary(strm,
+        if (INFLATESETDICTIONARY(strm,
                                  point->data,
                                  index->window_size) != Z_OK)
             goto fail_free_strm;
@@ -1327,7 +1348,7 @@ int _zran_init_zlib_inflate(zran_index_t *index,
  * clause.
  */
 fail_free_strm:
-    inflateEnd(strm);
+    INFLATEEND(strm);
 /* Something has gone wrong */
 fail:
     return -1;
@@ -1339,7 +1360,7 @@ fail:
  * decompression.
  */
 static int _zran_read_data_from_file(zran_index_t *index,
-                                     z_stream     *stream,
+                                     Z_STREAM     *stream,
                                      uint64_t      cmp_offset,
                                      uint64_t      uncmp_offset,
                                      uint32_t      need_atleast) {
@@ -1467,7 +1488,7 @@ fail:
  * contains concatenated streams).
  */
 int _zran_find_next_stream(zran_index_t *index,
-                           z_stream     *stream,
+                           Z_STREAM     *stream,
                            int          *offset) {
 
     int ret;
@@ -1511,7 +1532,7 @@ int _zran_find_next_stream(zran_index_t *index,
      * Re-configure for inflation
      * from the new stream.
      */
-    if (inflateEnd(stream) != Z_OK) {
+    if (INFLATEEND(stream) != Z_OK) {
         goto fail;
     }
 
@@ -1535,7 +1556,7 @@ not_found:
 
 /* Validate the CRC32 and size of a GZIP stream. */
 static int _zran_validate_stream(zran_index_t *index,
-                                 z_stream     *stream,
+                                 Z_STREAM     *stream,
                                  int          *offset) {
 
     uint32_t crc;
@@ -1581,7 +1602,7 @@ static int _zran_validate_stream(zran_index_t *index,
 
 /* The workhorse. Inflate/decompress data from the file. */
 static int _zran_inflate(zran_index_t *index,
-                         z_stream     *strm,
+                         Z_STREAM     *strm,
                          uint64_t      offset,
                          uint16_t      flags,
                          uint32_t     *total_consumed,
@@ -1633,7 +1654,7 @@ static int _zran_inflate(zran_index_t *index,
      * if we are initialising.
      */
     if (inflate_init_stream(flags)) {
-        memset(strm, 0, sizeof(z_stream));
+        memset(strm, 0, sizeof(Z_STREAM));
     }
 
     /*
@@ -1898,10 +1919,10 @@ static int _zran_inflate(zran_index_t *index,
              * stream, or it runs out of input or output.
              */
             if (inflate_stop_at_block(flags)) {
-                z_ret = inflate(strm, Z_BLOCK);
+                z_ret = INFLATE(strm, Z_BLOCK);
             }
             else {
-                z_ret = inflate(strm, Z_NO_FLUSH);
+                z_ret = INFLATE(strm, Z_NO_FLUSH);
             }
 
             /*
@@ -1964,7 +1985,7 @@ static int _zran_inflate(zran_index_t *index,
                 index->validating                         &&
                 !(index->flags & ZRAN_SKIP_CRC_CHECK)) {
                 index->stream_size +=       bytes_output;
-                index->stream_crc32 = crc32(index->stream_crc32,
+                index->stream_crc32 = CRC32(index->stream_crc32,
                                             strm->next_out - bytes_output,
                                             bytes_output);
             }
@@ -2182,7 +2203,7 @@ static int _zran_inflate(zran_index_t *index,
      * is active, do just that.
      */
     if (inflate_free_stream(flags)) {
-        if (inflateEnd(strm) != Z_OK)
+        if (INFLATEEND(strm) != Z_OK)
             goto fail;
     }
 
@@ -2240,7 +2261,7 @@ int _zran_expand_index(zran_index_t *index, uint64_t until) {
     int z_ret;
 
     /* Zlib stream struct */
-    z_stream strm;
+    Z_STREAM strm;
 
     /*
      * Number of bytes read/decompressed
@@ -2701,7 +2722,7 @@ int64_t zran_read(zran_index_t *index,
      * Zlib stream struct and starting
      * index point for the read..
      */
-    z_stream      strm;
+    Z_STREAM      strm;
     zran_point_t *start = NULL;
 
     /*
@@ -3214,7 +3235,7 @@ int zran_import_index(zran_index_t *index,
     index->flags |= ZRAN_SKIP_CRC_CHECK;
 
     /* Check if file is read only. */
-    if (!is_readonly(fd, f)) goto fail;
+    if (!is_readonly(fd)) goto fail;
 
     /* Read ID, and check for file errors and EOF. */
     f_ret = fread_(file_id, sizeof(file_id), 1, fd, f);

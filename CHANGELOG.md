@@ -1,12 +1,20 @@
 # `indexed_gzip` changelog
 
 
+## 1.8.0 (Under development)
+
+
+* Changes to allow linking against
+  [zlib-ng](https://github.com/zlib-ng/zlib-ng/) (#107).
+* Simplified C interface `cindexed_gzip`, and machinery for compiling as a
+  static or shared C library (#107).
+
+
 ## 1.7.1 (March 31st 2023)
 
 
 * Small change to the `IndexedGzipFile` class so that it accepts file-likes
   which do not implement `fileno()` (#118).
-
 
 
 ## 1.7.0 (September 12th 2022)

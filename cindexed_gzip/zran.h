@@ -1,6 +1,12 @@
 #ifndef __ZRAN_H__
 #define __ZRAN_H__
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /*
  * The zran module is an adaptation of the zran example, written by Mark
  * Alder, which ships with the zlib source code. It allows the creation
@@ -8,11 +14,16 @@
  * of random seek/read access to the uncompressed data.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef ZRAN_SUPPORT_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#else
+#define PyObject void
+#endif
 
 struct _zran_index;
 struct _zran_point;
@@ -501,5 +512,9 @@ int zran_import_index(
   FILE          *fd,    /* Open handle to import file        */
   PyObject      *f      /* Open handle to import file object */
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZRAN_H__ */
