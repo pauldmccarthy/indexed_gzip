@@ -63,7 +63,7 @@ static double round(double val)
  *
  * #define ZRAN_VERBOSE
  */
-//#define ZRAN_VERBOSE
+#define ZRAN_VERBOSE
 
 
 #ifdef ZRAN_VERBOSE
@@ -598,8 +598,8 @@ int zran_init(zran_index_t *index,
     zran_point_t *point_list = NULL;
     int64_t       compressed_size;
 
-    zran_log("zran_init(%u, %u, %u, %u)\n",
-             spacing, window_size, readbuf_size, flags);
+    zran_log("\nzran_init(%u, %u, %u, %u, %u, %u)\n",
+             spacing, window_size, readbuf_size, flags, fd, f);
 
     if (spacing      == 0) spacing      = 1048576;
     if (window_size  == 0) window_size  = 32768;
@@ -832,8 +832,9 @@ int _zran_invalidate_index(zran_index_t *index, uint64_t from)
 int zran_build_index(zran_index_t *index, uint64_t from, uint64_t until)
 {
 
-    if (_zran_invalidate_index(index, from) != 0)
+    if (_zran_invalidate_index(index, from) != 0) {
         return ZRAN_BUILD_INDEX_FAIL;
+    }
 
     return _zran_expand_index(index, until);
 }
@@ -1390,6 +1391,11 @@ static int _zran_read_data_from_file(zran_index_t *index,
                    index->f);
 
     if (ferror_(index->fd, index->f)) {
+        zran_log("FAIL: _zran_read_data_from_file, %u, %u, %u, %u\n", index->readbuf + stream->avail_in,
+                   1,
+                   index->readbuf_size - stream->avail_in,
+                   index->fd,
+                   index->f);
         goto fail;
     }
 
@@ -1741,8 +1747,9 @@ static int _zran_inflate(zran_index_t *index,
      */
     if (inflate_init_readbuf(flags)) {
         index->readbuf = calloc(1, index->readbuf_size);
-        if (index->readbuf == NULL)
+        if (index->readbuf == NULL) {
             goto fail;
+        }
     }
 
     /*
@@ -1819,6 +1826,7 @@ static int _zran_inflate(zran_index_t *index,
                                           cmp_offset,
                                           uncmp_offset,
                                           index->readbuf_size) != 0) {
+                                            zran_log("zran_inflate goto fail 4\n");
                 goto fail;
             }
         }
@@ -2207,6 +2215,7 @@ static int _zran_inflate(zran_index_t *index,
              cmp_offset, uncmp_offset);
 
     /* Phew. */
+    zran_log("ZRAN_INFLATE SUCCESS, return val is %u", return_val);
     return return_val;
 
 fail:
@@ -2216,7 +2225,7 @@ fail:
         index->readbuf_offset = 0;
         index->readbuf_end    = 0;
     }
-
+    zran_log("ZRAN_INFLATE FAIL, return val is %u", error_return_val);
     return error_return_val;
 }
 
@@ -2226,7 +2235,7 @@ fail:
  * compressed offset specified by 'until'.
  */
 int _zran_expand_index(zran_index_t *index, uint64_t until) {
-
+    zran_log("====starting _zran_expand_index\n");
     /*
      * Used to store return code when
      * an error occurs.
@@ -2453,6 +2462,7 @@ int _zran_expand_index(zran_index_t *index, uint64_t until) {
             if (z_ret == ZRAN_INFLATE_CRC_ERROR) {
                 error_return_val = ZRAN_EXPAND_INDEX_CRC_ERROR;
             }
+            zran_log("\n====goto fail 5, z_ret is: %u\n", z_ret);
             goto fail;
         }
 
