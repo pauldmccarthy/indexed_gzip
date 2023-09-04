@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#define zran_log(...) fprintf(stderr, __VA_ARGS__)
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -52,12 +53,18 @@ size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
 
     _ZRAN_FILE_UTIL_ACQUIRE_GIL
 
-    if ((data = PyObject_CallMethod(f, "read", "(n)", size * nmemb)) == NULL)
+    if ((data = PyObject_CallMethod(f, "read", "(n)", size * nmemb)) == NULL){
+        zran_log("In _fread_python, go to fail 1, size * nmemb is %u\n", size*nmemb);  // GO TO HERE
         goto fail;
-    if ((buf = PyBytes_AsString(data)) == NULL)
+    }
+    if ((buf = PyBytes_AsString(data)) == NULL){
+        zran_log("In _fread_python, go to fail 2\n");
         goto fail;
-    if ((len = PyBytes_Size(data)) == -1)
+    }
+    if ((len = PyBytes_Size(data)) == -1){
+        zran_log("In _fread_python, go to fail 3\n");
         goto fail;
+    }
 
     memmove(ptr, buf, (size_t) len);
 
@@ -66,7 +73,7 @@ size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
     return (size_t) len / size;
 
 fail:
-    Py_XDECREF(data);
+    Py_XDECREF(data); // reduce a references, the `data` can be NULL
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 }
@@ -146,10 +153,12 @@ int _feof_python(PyObject *f, size_t f_ret) {
  * file-like objects.
  */
 int _ferror_python(PyObject *f) {
+    zran_log("In  _ferror_python beginning, f is %u\n", f);
     PyObject *result;
 
     _ZRAN_FILE_UTIL_ACQUIRE_GIL
     result = PyErr_Occurred();
+    zran_log("In  _ferror_python, f is %u, result is %u\n", f, result);
     _ZRAN_FILE_UTIL_RELEASE_GIL
 
     if (result != NULL) return 1;
@@ -277,7 +286,14 @@ int _seekable_python2(PyObject *f) {
  * Calls ferror on fd if specified, otherwise the Python-specific method on f.
  */
 int ferror_(FILE *fd, PyObject *f) {
-    return fd != NULL ? ferror(fd) : _ferror_python(f);
+    // return fd != NULL ? ferror(fd) : _ferror_python(f);
+    if(fd != NULL){
+        zran_log("In Ferror, go to fd. fd here is %u, f here is %u\n", fd, f);
+        return ferror(fd);
+    }else{
+        zran_log("In Ferror, go to f. fd here is %u, f here is %u\n", fd, f);
+        return _ferror_python(f);
+    }
 }
 
 /*

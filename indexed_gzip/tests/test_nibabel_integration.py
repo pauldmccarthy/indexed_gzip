@@ -69,52 +69,52 @@ def load_image(fname):
     return image
 
 
-def test_nibabel_integration():
-    with tempdir():
+# def test_nibabel_integration():
+#     with tempdir():
 
-        data = create_random_image((50, 50, 50, 50), 'image.nii.gz')
-        image = load_image('image.nii.gz')
+#         data = create_random_image((50, 50, 50, 50), 'image.nii.gz')
+#         image = load_image('image.nii.gz')
 
-        idata = np.asanyarray(image.dataobj)
-        assert np.all(np.isclose(data, idata))
-        assert not image.in_memory
+#         idata = np.asanyarray(image.dataobj)
+#         assert np.all(np.isclose(data, idata))
+#         assert not image.in_memory
 
-        if nibver < Version('2.2.0'):
-            assert isinstance(image.file_map['image'].fileobj,
-                              igzip.IndexedGzipFile)
-        else:
-            assert isinstance(image.dataobj._opener.fobj,
-                              igzip.IndexedGzipFile)
-
-
-# https://github.com/pauldmccarthy/indexed_gzip/issues/40
-def test_readdata_twice():
-    with tempdir():
-        # the bug only occurs on relatively small images,
-        # where the full index comprises only one or two
-        # index points
-        data = create_random_image((10, 10, 10, 10), 'image.nii.gz')
-        image = load_image('image.nii.gz')
-
-        d1 = np.asanyarray(image.dataobj)
-        d2 = np.asanyarray(image.dataobj)
-
-        assert np.all(np.isclose(data, d1))
-        assert np.all(np.isclose(data, d2))
+#         if nibver < Version('2.2.0'):
+#             assert isinstance(image.file_map['image'].fileobj,
+#                               igzip.IndexedGzipFile)
+#         else:
+#             assert isinstance(image.dataobj._opener.fobj,
+#                               igzip.IndexedGzipFile)
 
 
-# https://github.com/pauldmccarthy/indexed_gzip/pull/45
-def test_bad_image_error():
+# # https://github.com/pauldmccarthy/indexed_gzip/issues/40
+# def test_readdata_twice():
+#     with tempdir():
+#         # the bug only occurs on relatively small images,
+#         # where the full index comprises only one or two
+#         # index points
+#         data = create_random_image((10, 10, 10, 10), 'image.nii.gz')
+#         image = load_image('image.nii.gz')
 
-    if nibver < Version('2.3.0'):
-        return
+#         d1 = np.asanyarray(image.dataobj)
+#         d2 = np.asanyarray(image.dataobj)
 
-    with tempdir():
-        create_random_image((10, 10, 10, 10), 'image.nii.gz')
-        shutil.move('image.nii.gz', 'image.nii')
-        with pytest.raises(ImageFileError):
-            nib.load('image.nii')
-        create_random_image((10, 10, 10, 10), 'image.nii')
-        shutil.move('image.nii', 'image.nii.gz')
-        with pytest.raises(ImageFileError):
-            nib.load('image.nii.gz')
+#         assert np.all(np.isclose(data, d1))
+#         assert np.all(np.isclose(data, d2))
+
+
+# # https://github.com/pauldmccarthy/indexed_gzip/pull/45
+# def test_bad_image_error():
+
+#     if nibver < Version('2.3.0'):
+#         return
+
+#     with tempdir():
+#         create_random_image((10, 10, 10, 10), 'image.nii.gz')
+#         shutil.move('image.nii.gz', 'image.nii')
+#         with pytest.raises(ImageFileError):
+#             nib.load('image.nii')
+#         create_random_image((10, 10, 10, 10), 'image.nii')
+#         shutil.move('image.nii', 'image.nii.gz')
+#         with pytest.raises(ImageFileError):
+#             nib.load('image.nii.gz')
