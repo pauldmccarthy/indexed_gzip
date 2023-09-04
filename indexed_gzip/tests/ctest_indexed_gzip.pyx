@@ -918,45 +918,51 @@ def test_import_export_index_open_file():
 
 
 def test_build_index_from_unseekable():
-    with tempdir() as td:
-        fname    = op.join(td, 'test.gz')
-        idxfname = op.join(td, 'test.gzidx')
+    for use_build_full_index in (True, False):
+      with tempdir() as td:
+          fname    = op.join(td, 'test.gz')
+          idxfname = op.join(td, 'test.gzidx')
 
-        # make a test file
-        data = np.arange(524288, dtype=np.uint64)
-        with gzip.open(fname, 'wb') as f:
-            f.write(data.tostring())
+          # make a test file
+          data = np.arange(524288, dtype=np.uint64)
+          with gzip.open(fname, 'wb') as f:
+              f.write(data.tostring())
 
-        # Test creating the index when file is unseekable,
-        # then using the index when file is seekable.
-        with open(fname, 'rb') as f:
-            b = f.read()
-            fileobj = BytesIO(b)
+          # Test creating the index when file is unseekable,
+          # then using the index when file is seekable.
+          with open(fname, 'rb') as f:
+              b = f.read()
+              fileobj = BytesIO(b)
 
-        def new_seek(*args, **kwargs):
-            raise OSError()
-        def new_tell(*args, **kwargs):
-            raise OSError()
-        old_seek = fileobj.seek
-        old_tell = fileobj.tell
-        fileobj.seekable = lambda: False
-        fileobj.seek = new_seek
-        fileobj.tell = new_tell
-        # generate an index file
-        with igzip._IndexedGzipFile(fileobj, spacing=131072) as f:
-            f.build_full_index()
-            f.export_index(idxfname)
-            points = list(f.seek_points())
-        fileobj.seek = old_seek
-        fileobj.tell = old_tell
-        fileobj.seekable = lambda: True
-        fileobj.seek(0)
-        # Check that index file works via __init__
-        with igzip._IndexedGzipFile(fileobj, index_file=idxfname) as f:
-            f.seek(65535 * 8)
-            val = np.frombuffer(f.read(8), dtype=np.uint64)
-            assert val[0] == 65535
-            assert points == list(f.seek_points())
+          def new_seek(*args, **kwargs):
+              raise OSError()
+          def new_tell(*args, **kwargs):
+              raise OSError()
+          old_seek = fileobj.seek
+          old_tell = fileobj.tell
+          fileobj.seekable = lambda: False
+          fileobj.seek = new_seek
+          fileobj.tell = new_tell
+          # generate an index file
+          with igzip._IndexedGzipFile(fileobj, spacing=131072) as f:
+              if use_build_full_index:
+                  f.build_full_index()
+              else:
+                  # Build full index by reading the entire file instead. This should also work.
+                  while f.read(1024):
+                      pass
+              f.export_index(idxfname)
+              points = list(f.seek_points())
+          fileobj.seek = old_seek
+          fileobj.tell = old_tell
+          fileobj.seekable = lambda: True
+          fileobj.seek(0)
+          # Check that index file works via __init__
+          with igzip._IndexedGzipFile(fileobj, index_file=idxfname) as f:
+              f.seek(65535 * 8)
+              val = np.frombuffer(f.read(8), dtype=np.uint64)
+              assert val[0] == 65535
+              assert points == list(f.seek_points())
 
 
 def test_wrapper_class():
