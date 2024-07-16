@@ -61,12 +61,12 @@ size_t _fread_python(void *ptr, size_t size, size_t nmemb, PyObject *f) {
 
     memmove(ptr, buf, (size_t) len);
 
-    Py_DECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return (size_t) len / size;
 
 fail:
-    Py_XDECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 }
@@ -89,12 +89,12 @@ int64_t _ftell_python(PyObject *f) {
     if (result == -1 && PyErr_Occurred())
         goto fail;
 
-    Py_DECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return result;
 
 fail:
-    Py_XDECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return -1;
 }
@@ -122,12 +122,12 @@ int _fseek_python(PyObject *f, int64_t offset, int whence) {
     if (data == NULL)
         goto fail;
 
-    Py_DECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 
 fail:
-    Py_XDECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return -1;
 }
@@ -166,12 +166,12 @@ int _fflush_python(PyObject *f) {
     _ZRAN_FILE_UTIL_ACQUIRE_GIL
     if ((data = PyObject_CallMethod(f, "flush", NULL)) == NULL) goto fail;
 
-    Py_DECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 
 fail:
-    Py_XDECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return -1;
 }
@@ -205,14 +205,14 @@ size_t _fwrite_python(const void *ptr,
     len = size * nmemb;
     #endif
 
-    Py_DECREF(input);
-    Py_DECREF(data);
+    Py_DecRef(input);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return (size_t) len / size;
 
 fail:
-    Py_XDECREF(input);
-    Py_XDECREF(data);
+    Py_DecRef(input);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return 0;
 }
@@ -248,12 +248,12 @@ int _seekable_python(PyObject *f) {
     if (result == -1 && PyErr_Occurred())
         goto fail;
 
-    Py_DECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return result;
 
 fail:
-    Py_XDECREF(data);
+    Py_DecRef(data);
     _ZRAN_FILE_UTIL_RELEASE_GIL
     return -1;
 }
