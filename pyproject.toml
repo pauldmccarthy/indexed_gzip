@@ -1,5 +1,10 @@
 [build-system]
-requires      = ["setuptools >= 40.8.0", "cython"]
+requires      = [
+  "setuptools >= 40.8.0",
+  "cython; python_version < '3.11'",
+  "cython @ git+https://github.com/cython/cython.git@refs/pull/5871/merge; python_version >= '3.11'",
+  "wheel; python_version >= '3.11'",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
