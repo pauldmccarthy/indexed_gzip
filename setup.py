@@ -74,9 +74,13 @@ class Clean(Command):
                 try:            os.remove(g)
                 except OSError: pass
 
+command_classes = {
+    'clean' : Clean,
+}
 
 # Platform information
 noc99     = sys.version_info[0] == 3 and sys.version_info[1] <= 4
+stable_abi = sys.version_info[0] == 3 and sys.version_info[1] >= 11
 windows   = sys.platform.startswith("win")
 testing   = 'INDEXED_GZIP_TESTING' in os.environ
 thisdir   = op.dirname(__file__)
@@ -96,6 +100,7 @@ have_cython = True
 have_numpy  = True
 
 try:
+    import Cython
     from Cython.Build import cythonize
 except Exception:
     have_cython = False
@@ -117,6 +122,10 @@ print('  ZLIB_HOME:   {} (if set, ZLIB sources are compiled into '
 print('  testing:     {} (if True, code will be compiled with line '
       'tracing enabled)'.format(testing))
 
+if stable_abi and have_cython:
+    cython_version_info = tuple(map(int, Cython.__version__.split('.')[:2]))
+    # Cython 3.1 is/will be the first version to support the stable ABI
+    stable_abi = cython_version_info >= (3, 1)
 
 # compile flags
 include_dirs        = ['indexed_gzip']
@@ -128,6 +137,11 @@ compiler_directives = {'language_level' : 2}
 define_macros       = [
     ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION'),
 ]
+if stable_abi:
+    define_macros += [
+        ('CYTHON_LIMITED_API', '1'),
+        ('Py_LIMITED_API', '0x030b0000'),
+    ]
 
 if ZLIB_HOME is not None:
     include_dirs.append(ZLIB_HOME)
@@ -174,7 +188,9 @@ igzip_ext = Extension(
     library_dirs=lib_dirs,
     include_dirs=include_dirs,
     extra_compile_args=extra_compile_args,
-    define_macros=define_macros)
+    define_macros=define_macros,
+    py_limited_api=stable_abi,
+)
 
 # Optional test modules
 test_exts = []
@@ -190,7 +206,9 @@ if not windows:
         library_dirs=lib_dirs,
         include_dirs=include_dirs,
         extra_compile_args=extra_compile_args,
-        define_macros=define_macros))
+        define_macros=define_macros,
+        py_limited_api=stable_abi,
+    ))
 
 # If we have numpy, we can compile the tests
 if have_numpy: extensions = [igzip_ext] + test_exts
@@ -201,8 +219,20 @@ else:          extensions = [igzip_ext]
 if have_cython:
     extensions = cythonize(extensions, compiler_directives=compiler_directives)
 
+if stable_abi:
+    from wheel.bdist_wheel import bdist_wheel
+
+    class bdist_wheel_abi3(bdist_wheel):
+        def get_tag(self):
+            python, abi, plat = super().get_tag()
+            if python.startswith('cp3'):
+                python, abi = 'cp311', 'abi3'
+            return python, abi, plat
+
+    command_classes['bdist_wheel'] = bdist_wheel_abi3
+
 setup(
     name='indexed_gzip',
-    cmdclass={'clean' : Clean},
+    cmdclass=command_classes,
     ext_modules=extensions,
 )
