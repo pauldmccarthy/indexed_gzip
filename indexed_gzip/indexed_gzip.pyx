@@ -31,7 +31,8 @@ from cpython.buffer cimport (PyObject_GetBuffer,
                              PyBUF_ANY_CONTIGUOUS,
                              PyBUF_SIMPLE)
 
-from cpython.ref cimport PyObject
+from cpython.ref cimport PyObject, Py_XDECREF
+from cpython.exc cimport PyErr_Occurred, PyErr_Fetch, PyErr_NormalizeException
 
 cimport indexed_gzip.zran as zran
 
@@ -66,6 +67,21 @@ def open(filename=None, fileobj=None, *args, **kwargs):
     See the ``IndexedGzipFile`` class for details on the other arguments.
     """
     return IndexedGzipFile(filename, fileobj, **kwargs)
+
+
+cdef _get_python_exception():
+    cdef PyObject *ptype
+    cdef PyObject *pvalue
+    cdef PyObject *ptraceback
+    if PyErr_Occurred():
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback)
+        PyErr_NormalizeException(&ptype, &pvalue, &ptraceback)
+        exc = <object>pvalue
+        Py_XDECREF(ptype)
+        Py_XDECREF(pvalue)
+        Py_XDECREF(ptraceback)
+        return exc
+    return None
 
 
 class IndexedGzipFile(io.BufferedReader):
@@ -743,9 +759,10 @@ cdef class _IndexedGzipFile:
 
                 # Unknown error
                 elif ret < 0:
+                    exc = _get_python_exception()
                     raise ZranError('zran_read returned error: {} (file: '
                                     '{})'.format(ZRAN_ERRORS.ZRAN_READ[ret],
-                                                 self.errname))
+                                                 self.errname)) from exc
 
                 nread  += ret
                 offset += ret
@@ -801,8 +818,9 @@ cdef class _IndexedGzipFile:
 
         # see how the read went
         if ret == zran.ZRAN_READ_FAIL:
+            exc = _get_python_exception()
             raise ZranError('zran_read returned error: {} (file: {})'
-                            .format(ZRAN_ERRORS.ZRAN_READ[ret], self.errname))
+                            .format(ZRAN_ERRORS.ZRAN_READ[ret], self.errname)) from exc
 
         # This will happen if the current
         # seek point is not covered by the

@@ -27,6 +27,7 @@ import                    contextlib
 import numpy as np
 from io import BytesIO
 import pytest
+import weakref
 
 import indexed_gzip as igzip
 
@@ -506,6 +507,48 @@ def test_read_beyond_end(concat, drop):
         del f
         f = None
         os.remove(testfile)
+
+
+def test_read_exception(testfile, nelems):
+    """When wrapping a python file object, if it raises an exception it should be preserved.
+    """
+    if sys.version_info[0] < 3:
+        # We can't set the .read attribute in Python 2
+        # because it's read-only, so skip it.
+        return
+
+    f    = None
+    gzf  = None
+
+    MY_ERROR = "This error should be preserved"
+    # We'll use a weakref to check that we are handling reference counting correctly,
+    # and you cannot weakref an Exception, so we need a subclass.
+    class MyException(Exception):
+        pass
+    my_err_weak = None
+    def my_error_fn(*args, **kwargs):
+        err = MyException(MY_ERROR)
+        nonlocal my_err_weak
+        my_err_weak = weakref.ref(err)
+        raise err
+
+    try:
+        with open(testfile, 'rb') as f2:
+            f = BytesIO(f2.read())
+        gzf = igzip._IndexedGzipFile(fileobj=f)
+        f.read = my_error_fn
+        try:
+            gzf.read(1)
+        except Exception as e:
+            assert MY_ERROR in str(e) or MY_ERROR in str(e.__cause__), f"Exception was not preserved; got {e}"
+        else:
+            assert False, "Expected an exception to be raised"
+    finally:
+        if gzf is not None: gzf.close()
+        if f   is not None: f  .close()
+        del f
+        del gzf
+    assert my_err_weak is None or my_err_weak() is None, "Exception was not garbage collected"
 
 
 def test_seek(concat):
