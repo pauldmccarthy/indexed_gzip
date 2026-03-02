@@ -26,7 +26,7 @@ jobs:
       - name: Build sdist
         run:  bash ./.ci/build_sdist.sh
 
-      - uses: actions/upload-artifact@v6.0.0
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: sdist
           path: ./dist/*.tar.gz
@@ -49,7 +49,7 @@ jobs:
       - name: Build wheels
         run:  bash ./.ci/build_wheels.sh
 
-      - uses: actions/upload-artifact@v6.0.0
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: macos_wheels
           path: ./dist/*.whl
@@ -76,7 +76,7 @@ jobs:
         run:  bash ./.ci/download_zlib.sh
       - name: Build wheels
         run:  bash ./.ci/build_wheels.sh
-      - uses: actions/upload-artifact@v6.0.0
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: windows_${{ matrix.arch }}_wheels
           path: ./dist/*.whl
@@ -105,7 +105,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Build wheels
         run:  bash ./.ci/build_wheels.sh
-      - uses: actions/upload-artifact@v6.0.0
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: linux_${{ matrix.arch }}_wheels
           path: ./dist/*.whl
@@ -120,7 +120,7 @@ jobs:
     steps:
 
       - name: Download wheels
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path:           dist/
           merge-multiple: true

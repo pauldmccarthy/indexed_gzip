@@ -4,7 +4,7 @@
 #
 set -e
 
-ZLIB_VERSION=1.3.1
+ZLIB_VERSION=1.3.2
 
 curl -o zlib.tar.gz https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz
 
