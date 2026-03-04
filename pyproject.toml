@@ -26,6 +26,7 @@ classifiers     = [
 ]
 
 [tool.setuptools_scm]
+version_file = "indexed_gzip/_version.py"
 
 [project.urls]
 "Repository" = "https://github.com/pauldmccarthy/indexed_gzip"
