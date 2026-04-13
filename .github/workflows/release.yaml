@@ -102,7 +102,7 @@ jobs:
           python-version: "3.12"
       - name: Set up QEMU for emulated (e.g. ARM) builds
         if:   ${{ matrix.arch == 'aarch64' }}
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Build wheels
         run:  bash ./.ci/build_wheels.sh
       - uses: actions/upload-artifact@v7.0.0
