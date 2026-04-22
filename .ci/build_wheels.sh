@@ -40,9 +40,6 @@ export CIBW_TEST_REQUIRES="cython pytest numpy nibabel coverage pytest-cov"
 #
 export CIBW_TEST_SKIP="*i686* *aarch64* cp312-win* cp313-win* cp313t-win*"
 
-# Enable free-threaded builds for Python versions (3.13t) that support it
-export CIBW_ENABLE=cpython-freethreading
-
 # Pytest makes it *very* awkward to run tests
 # from an installed package, and still find/
 # interpret a conftest.py file correctly.
